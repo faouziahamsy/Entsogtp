@@ -1,0 +1,45 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: sudo update-alternatives --set php /usr/bin/php7.4
+  displayName: 'Set PHP version to 7.4'
+
+- task: UseNode@2
+  inputs:
+    version: '12.x'
+  displayName: 'Use Node.js 12.x'
+
+- script: npm install -g ember-cli@3.28
+  displayName: 'Install Ember CLI'
+
+- script: npm install
+  workingDirectory: 'frontend' # Change this to the directory where your Ember.js code is located
+  displayName: 'Install Ember.js dependencies'
+
+- script: ember build --environment production
+  workingDirectory: 'frontend' # Change this to the directory where your Ember.js code is located
+  displayName: 'Build Ember.js project'
+
+- script: composer install --no-interaction --prefer-dist --optimize-autoloader
+  displayName: 'Install Symfony dependencies'
+
+- script: php bin/console cache:clear --env=prod --no-debug
+  displayName: 'Clear Symfony cache'
+
+- script: php bin/console assets:install public
+  displayName: 'Install Symfony assets'
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)'
+    artifact: 'drop'
+    publishLocation: 'Pipeline'
+  displayName: 'Publish artifacts'
